@@ -1,4 +1,3 @@
-
 # Функция для добавления типа Win32
 if (-not ([System.Management.Automation.PSTypeName]'Win32').Type) {
     Add-Type @"
@@ -28,6 +27,7 @@ if (-not ([System.Management.Automation.PSTypeName]'Win32').Type) {
 # Путь к TightVNC Viewer
 $tightVncPath = "C:\Program Files\TightVNC\tvnviewer.exe"
 
+# Данные для окон
 # Данные для окон
 $windowData = @(
     @{
@@ -149,13 +149,14 @@ $windowData = @(
         Y = 523
         Width = 317
         Height = 525
-    },
+    }
 )
+
 
 # Проверка окон и запуск/перемещение
 foreach ($window in $windowData) {
     $title = $window.Title
-    $remoteHost = $window.Host
+    $remoteHost = $window.Host # Переименовано из $host
     $password = $window.Password
     $port = $window.Port
     $newX = $window.X
@@ -178,11 +179,11 @@ foreach ($window in $windowData) {
         }
     } else {
         # Если процесс не найден, запускаем новое окно
-        $args = @("${remoteHost}::${port}", "-password=${password}")
+        $args = @("${remoteHost}::${port}", "-password=${password}") # Используем $remoteHost
         try {
             Write-Host "Запуск нового экземпляра TightVNC Viewer для '$title'..."
             Start-Process -FilePath $tightVncPath -ArgumentList $args -NoNewWindow -ErrorAction Stop
-            Start-Sleep -Seconds 2
+            Start-Sleep -Seconds 2 # Даем окну время для запуска
 
             # Повторяем попытку поиска окна с ожиданием
             $newProcess = $null
@@ -193,7 +194,7 @@ foreach ($window in $windowData) {
                     break
                 }
                 $retryCount++
-                Start-Sleep -Seconds 3
+                Start-Sleep -Seconds 3 # Ожидаем 3 секунды перед повторной попыткой
             }
 
             if ($newProcess) {
