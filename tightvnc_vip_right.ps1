@@ -142,7 +142,7 @@ $windowData = @(
     },
     @{
         Title = "dui-016 - TightVNC Viewer"
-        Host = "172.21.8.121"
+        Host = "172.21.8.116"
         Password = "admin123456"
         Port = 5900
         X = 3530
