@@ -88,3 +88,4 @@ if ($latestFile) {
 } else {
     Write-Output "Ошибка: Файл записи не найден."
 }
+exit
