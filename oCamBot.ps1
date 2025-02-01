@@ -46,62 +46,46 @@ if ($latestFile) {
     # Задержка перед отправкой в Telegram
     Start-Sleep -Seconds 5
 
-    # Параметры бота и групп
-    $botToken = "8161154213:AAGAUAwQewPBNCT_dEQ52JdFQFMFIHHcFZE"
-    $mainChatId = "-4622489328"  # Основной чат
-    $backupChatId = "-1002456483885"  # Запасной чат
-    
-    # URL для отправки видео
-    $url = "https://api.telegram.org/bot$botToken/sendVideo"
-    $logUrl = "https://api.telegram.org/bot$botToken/sendMessage"
+    # Отправка файла в Telegram
 
     # Загрузка сборки System.Net.Http
     Add-Type -Path "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\System.Net.Http.dll"
 
-    $statusMessages = @()
+    # Параметры бота и группы
+    $botToken = "8161154213:AAGAUAwQewPBNCT_dEQ52JdFQFMFIHHcFZE"
+    $chatId = "-1002277376248"  # ID вашей группы
 
-    # Функция отправки видео
-    function Send-Video($chatId) {
-        $multipartContent = New-Object System.Net.Http.MultipartFormDataContent
-        $multipartContent.Add((New-Object System.Net.Http.StringContent($chatId)), "chat_id")
+    # URL для отправки видео
+    $url = "https://api.telegram.org/bot$botToken/sendVideo"
 
-        $fileStream = [System.IO.File]::OpenRead($destinationFilePath)
-        $fileContent = New-Object System.Net.Http.StreamContent($fileStream)
-        $fileContent.Headers.ContentType = [System.Net.Http.Headers.MediaTypeHeaderValue]::Parse("video/mp4")
-        $multipartContent.Add($fileContent, "video", [System.IO.Path]::GetFileName($destinationFilePath))
+    # Создаем контент для передачи файла
+    $multipartContent = New-Object System.Net.Http.MultipartFormDataContent
+    $multipartContent.Add((New-Object System.Net.Http.StringContent($chatId)), "chat_id")
 
-        try {
-            $httpClient = New-Object System.Net.Http.HttpClient
-            $response = $httpClient.PostAsync($url, $multipartContent).Result
-            $responseContent = $response.Content.ReadAsStringAsync().Result
+    $fileStream = [System.IO.File]::OpenRead($destinationFilePath)
+    $fileContent = New-Object System.Net.Http.StreamContent($fileStream)
+    $fileContent.Headers.ContentType = [System.Net.Http.Headers.MediaTypeHeaderValue]::Parse("video/mp4")
+    $multipartContent.Add($fileContent, "video", [System.IO.Path]::GetFileName($destinationFilePath))
 
-            if ($response.IsSuccessStatusCode) {
-                Write-Host "Видео успешно отправлено в чат $chatId!"
-                $statusMessages += "✅ Чат $chatId: Успешно"
-            } else {
-                Write-Host "Ошибка отправки видео в чат $chatId. Код ответа: $($response.StatusCode)"
-                Write-Host "Ответ: $responseContent"
-                $statusMessages += "❌ Чат $chatId: Ошибка ($($response.StatusCode))"
-            }
-        } catch {
-            Write-Host "Ошибка при отправке в чат $chatId: $_"
-            $statusMessages += "❌ Чат $chatId: Ошибка ($_)."
-        } finally {
-            $fileStream.Dispose()
+    # Отправка запроса
+    try {
+        $httpClient = New-Object System.Net.Http.HttpClient
+        $response = $httpClient.PostAsync($url, $multipartContent).Result
+        $responseContent = $response.Content.ReadAsStringAsync().Result
+
+        if ($response.IsSuccessStatusCode) {
+            Write-Host "Видео успешно отправлено!"
+        } else {
+            Write-Host "Ошибка отправки видео. Код ответа: $($response.StatusCode)"
+            Write-Host "Ответ: $responseContent"
         }
+    } catch {
+        Write-Host "Ошибка: $_"
+    } finally {
+        # Закрываем поток файла
+        $fileStream.Dispose()
     }
-
-    # Отправляем видео в основной чат
-    Send-Video $mainChatId
-    # Отправляем видео в запасной чат
-    Send-Video $backupChatId
-
-    # Отправка статуса в запасной чат
-    $statusMessage = "📢 **Отчет о загрузке видео**%0A🎥 **Файл:** `$newFileName`%0A📤 **Статус отправки:**%0A" + ($statusMessages -join "%0A")
-    $logParams = @{ "chat_id" = $backupChatId; "text" = $statusMessage; "parse_mode" = "Markdown" }
-    Invoke-RestMethod -Uri $logUrl -Method Post -Body $logParams
-
 } else {
     Write-Output "Ошибка: Файл записи не найден."
-} 
+}
 exit
